@@ -1,2 +1,24 @@
-<script src="vokabeln.js"></script>
-<script src="script.js"></script>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprachlern-App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="flashcard" class="card" onclick="flipCard()">
+      <div id="card-text">Klicke zum Starten</div>
+    </div>
+
+    <div class="controls">
+      <button onclick="prevCard()">Zurück</button>
+      <button onclick="nextCard()">Weiter</button>
+    </div>
+  </div>
+
+  <script src="vokabeln.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
