@@ -22,11 +22,8 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        answer:
-          data.choices && data.choices[0] && data.choices[0].message
-            ? data.choices[0].message.content
-            : "Entschuldigung, ich konnte leider keine Antwort generieren."
+      body: JSON.stringify(data, null, 2)
+       
       })
     };
   } catch (err) {
