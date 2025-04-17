@@ -1,6 +1,6 @@
 export async function handler(event) {
   try {
-    const { messages } = JSON.parse(event.body); // 🧠 Mehrere Nachrichten erlaubt
+    const { messages } = JSON.parse(event.body);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -10,7 +10,10 @@ export async function handler(event) {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: messages, // 👈 übergebe den kompletten Verlauf
+        messages: [
+          { role: "system", content: "Du bist ein hilfsbereiter Deutschlehrer. Antworte verständlich, präzise und grammatikbezogen." },
+          ...messages
+        ],
         max_tokens: 200
       })
     });
@@ -19,7 +22,12 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ answer: data.choices[0].message.content })
+      body: JSON.stringify({
+        answer:
+          data.choices && data.choices[0] && data.choices[0].message
+            ? data.choices[0].message.content
+            : "Entschuldigung, ich konnte leider keine Antwort generieren."
+      })
     };
   } catch (err) {
     return {
