@@ -1,6 +1,6 @@
 export async function handler(event) {
   try {
-    const { message } = JSON.parse(event.body);
+    const { messages } = JSON.parse(event.body); // 🧠 Mehrere Nachrichten erlaubt
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -10,8 +10,8 @@ export async function handler(event) {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: message }],
-        max_tokens: 150
+        messages: messages, // 👈 übergebe den kompletten Verlauf
+        max_tokens: 200
       })
     });
 
