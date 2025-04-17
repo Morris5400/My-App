@@ -1,5 +1,3 @@
-// script.js
-
 let current = 0;
 let showingDeutsch = true;
 
@@ -26,4 +24,12 @@ function prevCard() {
   updateCard();
 }
 
-window.onload = updateCard;
+window.onload = () => {
+  updateCard();
+
+  const cardElement = document.getElementById("flashcard");
+  cardElement.addEventListener("click", flipCard); // ← Das ist jetzt besser für Handy
+
+  document.querySelector(".controls button:nth-child(1)").addEventListener("click", prevCard);
+  document.querySelector(".controls button:nth-child(2)").addEventListener("click", nextCard);
+};
