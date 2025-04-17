@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="app-container">
-   <div id="flashcard" class="card">
+    <div id="flashcard" class="card">
       <div id="card-text">Klicke zum Starten</div>
     </div>
 
@@ -18,7 +18,45 @@
     </div>
   </div>
 
+  <!-- GPT-Chat Button & Fenster -->
+  <div id="chat-toggle">🧠 Frage zur Grammatik</div>
+  <div id="chat-window" style="display:none;">
+    <div id="chat-log"></div>
+    <input id="chat-input" type="text" placeholder="Frag mich etwas…" />
+    <button onclick="sendMessage()">Senden</button>
+  </div>
+
+  <!-- SCRIPTS -->
   <script src="vokabeln.js"></script>
   <script src="script.js"></script>
+
+  <!-- GPT-Chat Funktion -->
+  <script>
+    document.getElementById("chat-toggle").onclick = () => {
+      const chat = document.getElementById("chat-window");
+      chat.style.display = chat.style.display === "none" ? "block" : "none";
+    };
+
+    async function sendMessage() {
+      const input = document.getElementById("chat-input");
+      const log = document.getElementById("chat-log");
+      const question = input.value;
+      if (!question) return;
+
+      log.innerHTML += `<div><b>Du:</b> ${question}</div>`;
+      input.value = "…";
+
+      const response = await fetch("/.netlify/functions/chatgpt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: question })
+      });
+
+      const data = await response.json();
+      log.innerHTML += `<div><b>Bot:</b> ${data.answer}</div>`;
+      input.value = "";
+      log.scrollTop = log.scrollHeight;
+    }
+  </script>
 </body>
 </html>
