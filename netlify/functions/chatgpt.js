@@ -30,6 +30,7 @@ export async function handler(event) {
       })
     };
   } catch (err) {
+    console.error("Fehler bei GPT-Anfrage:", err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
