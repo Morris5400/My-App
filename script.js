@@ -47,6 +47,65 @@ window.onload = () => {
 // 🧠 GPT-Bot mit Gesprächsgedächtnis
 let messageHistory = [];
 
+// Wenn die Seite auf GitHub Pages läuft, existieren keine Netlify Functions.
+// Dann rufen wir die OpenAI API direkt aus dem Browser auf und verlangen
+// einen persönlichen API-Key vom Nutzer (wird in localStorage gespeichert).
+const useDirectApi = location.hostname.endsWith('github.io');
+let openaiKey = localStorage.getItem('openai_key') || '';
+
+async function fetchAnswer(messages) {
+  if (useDirectApi) {
+    if (!openaiKey) {
+      openaiKey = prompt('OpenAI API Key eingeben:') || '';
+      if (openaiKey) localStorage.setItem('openai_key', openaiKey);
+      else throw new Error('Kein API-Key angegeben');
+    }
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Du bist ein hilfsbereiter Deutschlehrer. Antworte verständlich, präzise und grammatikbezogen.'
+          },
+          ...messages
+        ],
+        max_tokens: 200
+      })
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`OpenAI API error ${resp.status}: ${text}`);
+    }
+
+    const data = await resp.json();
+    return (
+      data?.choices?.[0]?.message?.content ||
+      'Entschuldigung, ich konnte leider keine Antwort generieren.'
+    );
+  } else {
+    const resp = await fetch('/.netlify/functions/chatgpt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.error || `Server returned ${resp.status}`);
+    }
+    return data.answer;
+  }
+}
+
 document.getElementById("chat-toggle").onclick = () => {
   const chat = document.getElementById("chat-window");
   chat.style.display = chat.style.display === "none" ? "block" : "none";
@@ -61,39 +120,26 @@ document.getElementById("chat-input").addEventListener("keydown", (e) => {
 });
 
 async function sendMessage() {
-  const input = document.getElementById("chat-input");
-  const log = document.getElementById("chat-log");
+  const input = document.getElementById('chat-input');
+  const log = document.getElementById('chat-log');
   const question = input.value;
   if (!question) return;
 
   // Zeige Nutzereingabe
   log.innerHTML += `<div><b>Du:</b> ${question}</div>`;
-  input.value = "…";
+  input.value = '…';
 
   // Frage an Verlauf anhängen
-  messageHistory.push({ role: "user", content: question });
+  messageHistory.push({ role: 'user', content: question });
 
   try {
-    const response = await fetch("/.netlify/functions/chatgpt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: messageHistory })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || `Server returned ${response.status}`);
-    }
-
-    // Antwort anzeigen und Verlauf aktualisieren
-    log.innerHTML += `<div><b>Bot:</b> ${data.answer}</div>`;
-    messageHistory.push({ role: "assistant", content: data.answer });
-
+    const answer = await fetchAnswer(messageHistory);
+    log.innerHTML += `<div><b>Bot:</b> ${answer}</div>`;
+    messageHistory.push({ role: 'assistant', content: answer });
   } catch (error) {
     log.innerHTML += `<div><b>Fehler:</b> ${error.message}</div>`;
   }
 
-  input.value = "";
+  input.value = '';
   log.scrollTop = log.scrollHeight;
 }
