@@ -40,9 +40,8 @@ exports.handler = async function (event) {
   } catch (err) {
     console.error("GPT‑Function‑Error:", err.message);
     return {
-  statusCode: 500,
-  body: JSON.stringify({ error: err.message, stack: err.stack })
-};
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message, stack: err.stack }),
     };
   }
 };
