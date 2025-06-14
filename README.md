@@ -8,6 +8,7 @@ Eine einfache Vokabeltrainer-Webseite mit ChatGPT-Unterstützung.
 2. Klicke auf "🧠 Frage zur Grammatik", um den Chat zu öffnen.
 3. Beim ersten Start auf GitHub Pages wirst du nach einem OpenAI API Key gefragt. Dieser wird lokal im Browser gespeichert (localStorage).
 4. Beim Hosting auf Netlify wird stattdessen die Function `/.netlify/functions/chatgpt` verwendet. Hinterlege dort den Umgebungswert `OPENAI_API_KEY`.
+5. Wenn keine Netlify-Funktion erreichbar ist oder kein API-Key hinterlegt wurde, fragt die Seite nach einem eigenen API-Key und ruft OpenAI direkt auf.
 
 ## Entwickeln
 

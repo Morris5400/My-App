@@ -47,62 +47,80 @@ window.onload = () => {
 // 🧠 GPT-Bot mit Gesprächsgedächtnis
 let messageHistory = [];
 
-// Wenn die Seite auf GitHub Pages läuft, existieren keine Netlify Functions.
-// Dann rufen wir die OpenAI API direkt aus dem Browser auf und verlangen
-// einen persönlichen API-Key vom Nutzer (wird in localStorage gespeichert).
+// Auf GitHub Pages gibt es keine Netlify Functions. Dann rufen wir
+// die OpenAI-API direkt aus dem Browser auf und verlangen einen
+// persönlichen API-Key vom Nutzer (wird in localStorage gespeichert).
 const useDirectApi = location.hostname.endsWith('github.io');
 let openaiKey = localStorage.getItem('openai_key') || '';
 
+async function callOpenAi(messages) {
+  if (!openaiKey) {
+    openaiKey = prompt('OpenAI API Key eingeben:') || '';
+    if (openaiKey) localStorage.setItem('openai_key', openaiKey);
+    else throw new Error('Kein API-Key angegeben');
+  }
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openaiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Du bist ein hilfsbereiter Deutschlehrer. Antworte verständlich, präzise und grammatikbezogen.'
+        },
+        ...messages
+      ],
+      max_tokens: 200
+    })
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`OpenAI API error ${resp.status}: ${text}`);
+  }
+
+  const data = await resp.json();
+  return (
+    data?.choices?.[0]?.message?.content ||
+    'Entschuldigung, ich konnte leider keine Antwort generieren.'
+  );
+}
+
 async function fetchAnswer(messages) {
   if (useDirectApi) {
-    if (!openaiKey) {
-      openaiKey = prompt('OpenAI API Key eingeben:') || '';
-      if (openaiKey) localStorage.setItem('openai_key', openaiKey);
-      else throw new Error('Kein API-Key angegeben');
-    }
+    return callOpenAi(messages);
+  }
 
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Du bist ein hilfsbereiter Deutschlehrer. Antworte verständlich, präzise und grammatikbezogen.'
-          },
-          ...messages
-        ],
-        max_tokens: 200
-      })
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`OpenAI API error ${resp.status}: ${text}`);
-    }
-
-    const data = await resp.json();
-    return (
-      data?.choices?.[0]?.message?.content ||
-      'Entschuldigung, ich konnte leider keine Antwort generieren.'
-    );
-  } else {
+  try {
     const resp = await fetch('/.netlify/functions/chatgpt', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages })
     });
 
-    const data = await resp.json();
-    if (!resp.ok) {
-      throw new Error(data.error || `Server returned ${resp.status}`);
+    const text = await resp.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch {}
+
+    if (resp.ok) {
+      return data.answer;
     }
-    return data.answer;
+
+    const errMsg = data.error || `Server returned ${resp.status}`;
+    if (errMsg.includes('OPENAI_API_KEY')) {
+      // Netlify-Funktion hat keinen API-Key – direkt im Browser versuchen
+      return callOpenAi(messages);
+    }
+    throw new Error(errMsg);
+  } catch (err) {
+    // Netzwerkausfall oder ungültige Antwort – Fallback auf direkte API
+    return callOpenAi(messages);
   }
 }
 
