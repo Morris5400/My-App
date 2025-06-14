@@ -52,6 +52,14 @@ document.getElementById("chat-toggle").onclick = () => {
   chat.style.display = chat.style.display === "none" ? "block" : "none";
 };
 
+// Absenden mit Enter-Taste
+document.getElementById("chat-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    sendMessage();
+    e.preventDefault();
+  }
+});
+
 async function sendMessage() {
   const input = document.getElementById("chat-input");
   const log = document.getElementById("chat-log");
@@ -74,12 +82,16 @@ async function sendMessage() {
 
     const data = await response.json();
 
+    if (!response.ok) {
+      throw new Error(data.error || `Server returned ${response.status}`);
+    }
+
     // Antwort anzeigen und Verlauf aktualisieren
     log.innerHTML += `<div><b>Bot:</b> ${data.answer}</div>`;
     messageHistory.push({ role: "assistant", content: data.answer });
 
   } catch (error) {
-    log.innerHTML += `<div><b>Fehler:</b> GPT konnte nicht antworten.</div>`;
+    log.innerHTML += `<div><b>Fehler:</b> ${error.message}</div>`;
   }
 
   input.value = "";

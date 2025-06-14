@@ -2,6 +2,10 @@ exports.handler = async function (event) {
   try {
     const { messages } = JSON.parse(event.body);
 
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY is not set");
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -21,6 +25,11 @@ exports.handler = async function (event) {
         max_tokens: 200,
       }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
+    }
 
     const data = await response.json();
 
