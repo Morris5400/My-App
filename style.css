@@ -10,6 +10,24 @@ body {
   margin: 0;
 }
 
+header {
+  width: 100%;
+  background-color: #333;
+  padding: 10px 0;
+  text-align: center;
+}
+
+nav a {
+  color: #fff;
+  margin: 0 10px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav a.active {
+  text-decoration: underline;
+}
+
 .app-container {
   text-align: center;
 }
